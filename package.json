@@ -5,6 +5,7 @@
   "scripts": {
     "start": "node index.js"
   },
+  "type": "commonjs",
   "dependencies": {
     "dotenv": "^16.3.1",
     "express": "^4.19.2",
