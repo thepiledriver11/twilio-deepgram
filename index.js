@@ -57,5 +57,5 @@ server.listen(3000, () => {
   console.log('🚀 Server running on http://localhost:3000');
 });
 
-// ✅ Most reliable keep-alive method: never-ending promise
-new Promise(() => {}); // Keeps the process alive forever
+// ✅ Keeps the process alive forever (prevents Railway from killing it)
+new Promise(() => {});
