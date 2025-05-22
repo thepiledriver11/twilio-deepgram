@@ -40,6 +40,10 @@ wss.on('connection', (twilioWs) => {
     }
   });
 
+  dgWs.on('error', (err) => {
+    console.error('❌ Deepgram WebSocket error:', err.message || err);
+  });
+
   dgWs.on('message', (message) => {
     const data = JSON.parse(message);
     const transcript = data.channel?.alternatives?.[0]?.transcript;
@@ -53,7 +57,6 @@ wss.on('connection', (twilioWs) => {
     if (msg.event === 'media') {
       const audio = Buffer.from(msg.media.payload, 'base64');
 
-      // Buffer until Deepgram is open
       if (dgWs.readyState === WebSocket.OPEN) {
         dgWs.send(audio);
       } else {
@@ -74,5 +77,5 @@ server.listen(3000, () => {
   console.log('🚀 Server running on http://localhost:3000');
 });
 
-// Keeps the process alive on Railway
+// Keeps process alive on Railway
 new Promise(() => {});
