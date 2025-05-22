@@ -13,7 +13,7 @@ process.on('unhandledRejection', (err) => {
 
 const app = express();
 
-// ✅ Health route so Railway knows the server is up
+// ✅ Health route so Railway sees the app is live
 app.get("/", (req, res) => {
   res.send("Server is live");
 });
@@ -52,6 +52,9 @@ wss.on('connection', (twilioWs) => {
 
   twilioWs.on('close', () => dgWs.close());
 });
+
+// ✅ Keep the app alive on Railway even if idle
+setInterval(() => {}, 1 << 30); // Prevent idle shutdown
 
 server.listen(3000, () => {
   console.log('🚀 Server running on http://localhost:3000');
