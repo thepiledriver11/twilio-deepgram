@@ -13,7 +13,7 @@ process.on('unhandledRejection', (err) => {
 
 const app = express();
 
-// ✅ Health route so Railway sees the app is live
+// ✅ Health check route for Railway
 app.get("/", (req, res) => {
   res.send("Server is live");
 });
@@ -53,8 +53,11 @@ wss.on('connection', (twilioWs) => {
   twilioWs.on('close', () => dgWs.close());
 });
 
-// ✅ Keep the app alive on Railway even if idle
-setInterval(() => {}, 1 << 30); // Prevent idle shutdown
+// ✅ Keep app alive to prevent Railway shutdown
+const keepAlive = () => {
+  setTimeout(keepAlive, 1 << 30); // ~34 years
+};
+keepAlive();
 
 server.listen(3000, () => {
   console.log('🚀 Server running on http://localhost:3000');
