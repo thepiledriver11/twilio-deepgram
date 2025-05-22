@@ -3,7 +3,21 @@ const WebSocket = require('ws');
 const express = require('express');
 const http = require('http');
 
+// Global error handling
+process.on('uncaughtException', (err) => {
+  console.error('💥 Unhandled Error:', err);
+});
+process.on('unhandledRejection', (err) => {
+  console.error('💥 Unhandled Promise Rejection:', err);
+});
+
 const app = express();
+
+// Health check route
+app.get("/", (req, res) => {
+  res.send("Server is live");
+});
+
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
