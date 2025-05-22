@@ -53,12 +53,9 @@ wss.on('connection', (twilioWs) => {
   twilioWs.on('close', () => dgWs.close());
 });
 
-// ✅ Keep app alive to prevent Railway shutdown
-const keepAlive = () => {
-  setTimeout(keepAlive, 1 << 30); // ~34 years
-};
-keepAlive();
-
 server.listen(3000, () => {
   console.log('🚀 Server running on http://localhost:3000');
 });
+
+// ✅ Most reliable keep-alive method: never-ending promise
+new Promise(() => {}); // Keeps the process alive forever
