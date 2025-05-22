@@ -49,7 +49,7 @@ wss.on('connection', (twilioWs) => {
 
       try {
         const fetch = (await import('node-fetch')).default;
-        await fetch('https://voiceer-57205.bubbleapps.io/version-test/api/1.1/wf/transcript/initialize', {
+        await fetch('https://voiceer.io/api/1.1/wf/transcript', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ transcript })
