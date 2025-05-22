@@ -55,6 +55,5 @@ wss.on('connection', (twilioWs) => {
 server.listen(3000, () => {
   console.log('🚀 Server running on http://localhost:3000');
 });
-
 // ✅ Final line to keep the app alive on Railway
 new Promise(() => {});
