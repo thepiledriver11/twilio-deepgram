@@ -31,6 +31,8 @@ wss.on('connection', (twilioWs) => {
 
   const audioBuffer = [];
   let callSid = null;
+  let callStartTime = Date.now();
+  let chunkIndex = 0;
 
   dgWs.on('open', () => {
     console.log('🧠 Deepgram connected');
@@ -46,8 +48,13 @@ wss.on('connection', (twilioWs) => {
   dgWs.on('message', async (message) => {
     const data = JSON.parse(message);
     const transcript = data.channel?.alternatives?.[0]?.transcript;
+    const startTime = data.start || 0;
     if (transcript && transcript.length > 0) {
-      console.log(`📝 Transcript: ${transcript}`);
+      chunkIndex++;
+      const timestamp = new Date().toISOString();
+      const durationSeconds = ((Date.now() - callStartTime) / 1000).toFixed(1);
+
+      console.log(`📝 Transcript [${chunkIndex}]: ${transcript}`);
 
       try {
         await fetch('https://app.voiceer.io/api/1.1/wf/transcript', {
@@ -55,7 +62,11 @@ wss.on('connection', (twilioWs) => {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             transcript,
-            call_sid: callSid || 'unknown'
+            call_sid: callSid || 'unknown',
+            chunk_index: chunkIndex,
+            timestamp,
+            duration: durationSeconds,
+            start_offset: startTime
           })
         });
       } catch (err) {
@@ -69,12 +80,12 @@ wss.on('connection', (twilioWs) => {
 
     if (msg.event === 'start' && msg.start) {
       callSid = msg.start.callSid;
+      callStartTime = Date.now();
       console.log('📞 CallSid:', callSid);
     }
 
     if (msg.event === 'media') {
       const audio = Buffer.from(msg.media.payload, 'base64');
-
       if (dgWs.readyState === WebSocket.OPEN) {
         dgWs.send(audio);
       } else {
