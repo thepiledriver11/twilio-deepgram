@@ -13,7 +13,6 @@ process.on('unhandledRejection', (err) => {
 
 const app = express();
 
-// ✅ Health check route for Railway
 app.get("/", (req, res) => {
   res.send("Server is live");
 });
@@ -57,5 +56,5 @@ server.listen(3000, () => {
   console.log('🚀 Server running on http://localhost:3000');
 });
 
-// ✅ Keeps the process alive forever (prevents Railway from killing it)
+// ✅ Final keep-alive line with a semicolon
 new Promise(() => {});
