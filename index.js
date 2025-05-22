@@ -56,5 +56,5 @@ server.listen(3000, () => {
   console.log('🚀 Server running on http://localhost:3000');
 });
 
-// ✅ Final keep-alive line with a semicolon
+// ✅ Final line to keep the app alive on Railway
 new Promise(() => {});
