@@ -3,7 +3,7 @@ const WebSocket = require('ws');
 const express = require('express');
 const http = require('http');
 
-// Global error handling
+// Global error handlers
 process.on('uncaughtException', (err) => {
   console.error('💥 Unhandled Error:', err);
 });
@@ -13,7 +13,7 @@ process.on('unhandledRejection', (err) => {
 
 const app = express();
 
-// Health check route
+// ✅ Health route so Railway knows the server is up
 app.get("/", (req, res) => {
   res.send("Server is live");
 });
