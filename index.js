@@ -29,7 +29,17 @@ wss.on('connection', (twilioWs) => {
     headers: { Authorization: `Token ${process.env.DEEPGRAM_API_KEY}` }
   });
 
-  dgWs.on('open', () => console.log('🧠 Deepgram connected'));
+  const audioBuffer = [];
+
+  dgWs.on('open', () => {
+    console.log('🧠 Deepgram connected');
+
+    // Flush buffered audio once Deepgram is ready
+    while (audioBuffer.length > 0) {
+      dgWs.send(audioBuffer.shift());
+    }
+  });
+
   dgWs.on('message', (message) => {
     const data = JSON.parse(message);
     const transcript = data.channel?.alternatives?.[0]?.transcript;
@@ -42,8 +52,16 @@ wss.on('connection', (twilioWs) => {
     const msg = JSON.parse(message);
     if (msg.event === 'media') {
       const audio = Buffer.from(msg.media.payload, 'base64');
-      dgWs.send(audio);
+
+      // Buffer until Deepgram is open
+      if (dgWs.readyState === WebSocket.OPEN) {
+        dgWs.send(audio);
+      } else {
+        audioBuffer.push(audio);
+        console.warn('⏳ Buffering audio until Deepgram is ready...');
+      }
     }
+
     if (msg.event === 'stop') {
       dgWs.close();
     }
@@ -55,5 +73,6 @@ wss.on('connection', (twilioWs) => {
 server.listen(3000, () => {
   console.log('🚀 Server running on http://localhost:3000');
 });
-// ✅ Final line to keep the app alive on Railway
+
+// Keeps the process alive on Railway
 new Promise(() => {});
