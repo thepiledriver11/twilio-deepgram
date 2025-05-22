@@ -2,8 +2,8 @@ require('dotenv').config();
 const WebSocket = require('ws');
 const express = require('express');
 const http = require('http');
+const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 
-// Global error handlers
 process.on('uncaughtException', (err) => {
   console.error('💥 Unhandled Error:', err);
 });
@@ -13,7 +13,6 @@ process.on('unhandledRejection', (err) => {
 
 const app = express();
 
-// ✅ Health check for Railway
 app.get("/", (req, res) => {
   res.send("Server is live");
 });
@@ -30,15 +29,18 @@ wss.on('connection', (twilioWs) => {
     headers: { Authorization: `Token ${process.env.DEEPGRAM_API_KEY}` }
   });
 
-  let deepgramReady = false;
   const audioBuffer = [];
+  let callSid = null;
 
   dgWs.on('open', () => {
     console.log('🧠 Deepgram connected');
-    deepgramReady = true;
+    while (audioBuffer.length > 0) {
+      dgWs.send(audioBuffer.shift());
+    }
+  });
 
-    // Flush any buffered audio
-    audioBuffer.forEach(audio => dgWs.send(audio));
+  dgWs.on('error', (err) => {
+    console.error('❌ Deepgram WebSocket error:', err.message || err);
   });
 
   dgWs.on('message', async (message) => {
@@ -48,42 +50,50 @@ wss.on('connection', (twilioWs) => {
       console.log(`📝 Transcript: ${transcript}`);
 
       try {
-        const fetch = (await import('node-fetch')).default;
         await fetch('https://app.voiceer.io/api/1.1/wf/transcript', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ transcript })
+          body: JSON.stringify({
+            transcript,
+            call_sid: callSid || 'unknown'
+          })
         });
       } catch (err) {
-        console.error('❌ Failed to POST transcript to Bubble:', err);
+        console.error('❌ Failed to POST transcript to Bubble:', err.message || err);
       }
     }
   });
 
   twilioWs.on('message', (message) => {
     const msg = JSON.parse(message);
+
+    if (msg.event === 'start' && msg.start) {
+      callSid = msg.start.callSid;
+      console.log('📞 CallSid:', callSid);
+    }
+
     if (msg.event === 'media') {
       const audio = Buffer.from(msg.media.payload, 'base64');
-      if (deepgramReady) {
+
+      if (dgWs.readyState === WebSocket.OPEN) {
         dgWs.send(audio);
       } else {
-        console.log('🕓 Buffering audio until Deepgram is ready...');
         audioBuffer.push(audio);
+        console.warn('⏳ Buffering audio until Deepgram is ready...');
       }
     }
+
     if (msg.event === 'stop') {
       dgWs.close();
     }
   });
 
-  twilioWs.on('close', () => {
-    dgWs.close();
-  });
+  twilioWs.on('close', () => dgWs.close());
 });
 
 server.listen(3000, () => {
   console.log('🚀 Server running on http://localhost:3000');
 });
 
-// Keep alive
+// Keeps the process alive
 new Promise(() => {});
